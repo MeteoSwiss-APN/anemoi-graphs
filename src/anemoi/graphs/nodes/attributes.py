@@ -119,7 +119,7 @@ class AreaWeights(BaseWeights):
         self.radius = radius
         self.centre = centre
 
-    def get_raw_values(self, nodes: NodeStorage, *args, **kwargs) -> np.ndarray:
+    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
         """Compute the area associated to each node.
 
         It uses Voronoi diagrams to compute the area of each node.
@@ -128,20 +128,32 @@ class AreaWeights(BaseWeights):
         ----------
         nodes : NodeStorage
             Nodes of the graph.
-        args : tuple
-            Additional arguments.
         kwargs : dict
             Additional keyword arguments.
 
         Returns
         -------
         np.ndarray
-            Weights.
+            Attributes.
         """
         latitudes, longitudes = nodes.x[:, 0], nodes.x[:, 1]
         points = latlon_rad_to_cartesian((np.asarray(latitudes), np.asarray(longitudes)))
+
         sv = SphericalVoronoi(points, self.radius, self.centre)
-        area_weights = sv.calculate_areas()
+
+        if sv._simplices.dtype != np.intp:
+            sv._simplices = sv._simplices.astype(np.intp)
+
+        if isinstance(sv.regions, list):
+            LOGGER.debug("sv.regions content: %s", sv.regions)
+            sv.regions = np.array(sv.regions, dtype=object)
+
+        try:
+            area_weights = sv.calculate_areas()
+        except ValueError as e:
+            LOGGER.error("Error calculating areas: %s", e)
+            # Handle the error appropriately, e.g., return an empty array or re-raise
+
         LOGGER.debug(
             "There are %d of weights, which (unscaled) add up a total weight of %.2f.",
             len(area_weights),
