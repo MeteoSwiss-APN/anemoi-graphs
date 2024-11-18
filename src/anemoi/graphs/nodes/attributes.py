@@ -158,10 +158,10 @@ class AreaWeights(BaseNodeAttribute):
         result[mask] = area_weights
         LOGGER.debug(
             "There are %d of weights, which (unscaled) add up a total weight of %.2f.",
-            len(area_weights),
-            np.array(area_weights).sum(),
+            len(result),
+            np.array(result).sum(),
         )
-        return area_weights
+        return result
 
 
 class BooleanBaseNodeAttribute(BaseNodeAttribute, ABC):
